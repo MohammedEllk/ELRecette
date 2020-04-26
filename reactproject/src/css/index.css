@@ -1,0 +1,17 @@
+h1, li, .title {
+    font-family: 'Helvetica';
+}
+
+h1, li {
+    text-align: left;
+}
+
+.title {
+    background-color: #00ffff;
+    font-size: 50px;
+}
+
+li {
+    list-style-type: none;
+    font-size: 50px;
+}
