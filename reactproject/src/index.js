@@ -1,24 +1,31 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {PanelGroup,Panel,Button,ButtonToolbar,ListGroup,ListGroupItem} from 'react-bootstrap';
+import {Button,ButtonToolbar,Card, CardGroup,Badge} from 'react-bootstrap';
 import './css/index.css';
-import {AddR} from './components/addr';
 import {EditR} from './components/editr';
 //instance recipe/recette
 class Recipe extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      recipes: [],
-      showAdd: false,
+      
+      nameValue :"",
+      ingredientsValue:"",
       showEdit: false,
+      recipes : [],
       currentlyEditing: 0
-    };
-    this.showAddModal = this.showAddModal.bind(this);
-    this.showEditModal = this.showEditModal.bind(this);
-    this.addR = this.addR.bind(this);
+      
+      
+    }
+    this.buildStringFromIngredients = this.buildStringFromIngredients.bind(this);
+    this.getIngredientsFromString = this.getIngredientsFromString.bind(this);
     this.editR = this.editR.bind(this);
-    this.deleteR = this.deleteR.bind(this);
+    this.showEditModal = this.showEditModal.bind(this);
+    
+   
+
+
+    
   }
   componentDidMount() {
     var recipes = (typeof localStorage["recipes"] !== "undefined") ? JSON.parse(localStorage.getItem("recipes")) : [
@@ -28,18 +35,56 @@ class Recipe extends React.Component {
     ];
     this.setState({recipes: recipes});
   }
-  showAddModal() {//modËle : ajouter
-    this.setState({showAdd: !this.state.showAdd});
-  }
-  showEditModal(index) {//modËle : modifier
-    this.setState({currentlyEditing: index, showEdit: !this.state.showEdit});
-  }
-  addR(recipe) {//pour crÈer une nouvelle recette
-    let recipes = this.state.recipes;
-    recipes.push(recipe);
-    localStorage.setItem('recipes', JSON.stringify(recipes));
-    this.setState({recipes: recipes});
-    this.showAddModal();
+  getIngredientsFromString(str) {
+		return str.split(",").map(ingredient => ingredient.trim());
+	}
+
+	buildStringFromIngredients(arr) {
+		return arr.join(', ');
+	}
+  setName=(event)=>{
+    this.setState( {
+     nameValue : event.target.value
+    })
+   }
+   setIngredients=(event)=>{
+    this.setState( {
+     ingredientsValue : event.target.value
+    })
+   }
+   addRecipe=(event)=>{
+    event.preventDefault();
+    
+    
+    
+     let recipe = {
+       name:this.state.nameValue,
+       ingredients:this.getIngredientsFromString(this.state.ingredientsValue)
+     }
+     
+     this.setState(
+       {
+        recipes:[...this.state.recipes,recipe]
+       }
+     )
+     
+     localStorage.setItem('recipe', JSON.stringify(recipe));
+   }
+   onDelete=(recipes)=>{
+     let index = this.state.recipes.indexOf(recipes)
+     let listrecipe=[...this.state.recipes];
+     listrecipe.splice(index,1);
+     
+     this.setState(
+       {
+         recipes:listrecipe
+       }
+     );
+     
+     localStorage.setItem('recipes', JSON.stringify(listrecipe));
+   }
+  showEditModal(index) {//mod√®le : modifier
+    this.setState({currentlyEditing: index,showEdit:!this.state.showEdit});
   }
   editR(newName, newIngredients, currentlyEditing) {//
     let recipes = this.state.recipes;
@@ -48,44 +93,66 @@ class Recipe extends React.Component {
     this.setState({recipes: recipes});
     this.showEditModal(currentlyEditing);
   }
-  deleteR(index) {
-    let recipes = this.state.recipes.slice();
-    recipes.splice(index, 1);
-    localStorage.setItem('recipes', JSON.stringify(recipes));
-    this.setState({recipes: recipes, currentlyEditing: 0});
-  }
+
+
+   
+
+
+
+
   render() {
+    
     const recipes = this.state.recipes;
     var currentlyEditing = this.state.currentlyEditing;
+    
     return(
-      <div className="jumbotron">
-        <h1>Recette</h1>
-        <PanelGroup accordion id="recipes">
-          {recipes.map((recipe, index) => (
-            <Panel eventKey={index} key={index}>
-              <Panel.Heading>
-                <Panel.Title className="title" toggle>{recipe.name}</Panel.Title>
-              </Panel.Heading>
-              <Panel.Body collapsible>
-                <ListGroup>
-                  {recipe.ingredients.map((ingredient, index) => (
-                    <ListGroupItem key={index}>{ingredient}</ListGroupItem>
-                  ))}
-                </ListGroup>
-                <ButtonToolbar>
+
+      <div  bg="dark">
+        <h1>My Recipe</h1>
+        <div className = "card m-2">
+        <div className="col">
+        <h1>Ajouter un R√©cipe</h1>
+        <form onSubmit={this.addRecipe}>
+            <label>Ajouter la recette</label>
+            <input type="text" onChange={this.setName} name="recipe" value={this.state.nameValue} placeholder="new recette" className="p-2"/>
+            <label>Les ingr√©dients</label>
+            <input type="textarea" onChange={this.setIngredients} name="ingredients" value={this.state.ingredientsValue} placeholder="ingredients" className="p-2"/>
+            <div><button className="btn btn-primary">Ajouter </button> </div>
+        </form>
+        </div>
+        
+        
+        
+        {this.state.recipes.map((recipe,index) => (
+          <div className="row mb-2" bg="primary" >
+          <Card.Title className="title" bg="light" >  {recipe.name} </Card.Title>
+          <Card.Body >
+          
+          {recipe.ingredients.map((ingredient, index) => (
+           <Card bg="info" text='muted' >{ingredient}</Card>
+           ))}
+            <ButtonToolbar>
                   <Button bsStyle="warning" onClick={() => {this.showEditModal(index)}}>Edit</Button>
-                  <Button bsStyle="danger" onClick={() => {this.deleteR(index)}}>Delete</Button>
-                </ButtonToolbar>
-              </Panel.Body>
-              <EditR onShow={this.state.showEdit} onEdit={this.editR} onEditModal={() => {this.showEditModal(currentlyEditing)}} currentlyEditing={currentlyEditing} recipe={recipes[currentlyEditing]} />
-            </Panel>
-          ))}
-        </PanelGroup>
-        <Button bsStyle="primary" onClick={this.showAddModal}>Ajouter La recette</Button>
-        <AddR onShow={this.state.showAdd} onAdd={this.addR} onAddModal={this.showAddModal} />
+                  <Button className="btn btn-danger" bsStyle="danger" onClick={()=>this.onDelete(recipe)}>Supprimer</Button>
+            </ButtonToolbar>
+            
+           
+          </Card.Body>
+         <Card> <EditR onShow={this.state.showEdit} onEdit={this.editR} onEditModal={() => {this.showEditModal(currentlyEditing)}} currentlyEditing={currentlyEditing} recipe={recipes[currentlyEditing]} /></Card>
+         </div>  ))
+         }
+         
+        
       </div>
-    );
-  }
+      </div>
+        
+        
+        
+
+      );
+        
+        }
+        
 };
 
 ReactDOM.render(<Recipe />, document.getElementById('recette'));
